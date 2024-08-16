@@ -5,6 +5,7 @@
 
 extern crate rand;
 
+use std::env;
 use rand::Rng;
 
 struct GeneratorOptions {
@@ -37,12 +38,13 @@ static BAD_LETTERS: [char; 3] = [
     'I', 'l', 'O'
 ];
 
-const MIN_LENGTH : u8 = 4;
+const MIN_LENGTH: u8 = 4;
+const DEFAULT_LENGTH: u8 = 16;
 
 
-fn generate(generator_options: GeneratorOptions) -> Option<String> {
+fn generate(generator_options: &GeneratorOptions) -> Result<String, String> {
     if generator_options.length < MIN_LENGTH {
-        return None;
+        return Err("Password length must be >= 4".to_string());
     }
 
     let mut character_sets: Vec<&[char]> = Vec::new();
@@ -60,7 +62,7 @@ fn generate(generator_options: GeneratorOptions) -> Option<String> {
     }
 
     if character_sets.is_empty() {
-        return None
+        return Err("At least one character set must be selected".to_string());
     }
 
     let mut rng = rand::thread_rng();
@@ -69,7 +71,8 @@ fn generate(generator_options: GeneratorOptions) -> Option<String> {
 
     'generation: loop {
         for _ in 0..generator_options.length {
-            let character_set = character_sets.get(rng.gen_range(0..character_sets.len()))?;
+            let character_set = character_sets.get(rng.gen_range(0..character_sets.len()))
+                .unwrap();
 
             let character = loop {
                 let character = character_set[rng.gen_range(0..character_set.len())];
@@ -88,7 +91,7 @@ fn generate(generator_options: GeneratorOptions) -> Option<String> {
             }
         }
 
-        return Some(password);
+        return Ok(password);
     }
 }
 
@@ -105,18 +108,33 @@ fn check_password(bucket: &[char], password: &String) -> bool {
     false
 }
 
-
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 3 {
+        println!("Usage: password_generator <length> <character_sets>");
+        println!("character_sets:");
+        println!("\tu: upper case\n\tl: lower case\n\td: digits\n\ts: symbols");
+        println!("Example: 32 ulds");
+        return;
+    }
+
+    let password_length = args[1].parse().unwrap_or(DEFAULT_LENGTH);
+    let options = &args[2];
+
     let options = GeneratorOptions {
-        use_upper_case_letters: true,
-        use_lower_case_letters: true,
-        use_symbols: true,
-        use_digits: true,
-        length: 16,
+        use_upper_case_letters: options.contains(&"u".to_string()),
+        use_lower_case_letters: options.contains(&"l".to_string()),
+        use_symbols: options.contains(&"s".to_string()),
+        use_digits: options.contains(&"d".to_string()),
+        length: password_length,
     };
 
-    match generate(options) {
-        Some(password) => println!("password = {password}"),
-        None => println!("Not generated")
+    let password = generate(&options).unwrap_or_else(|error| {
+        println!("Not generated: \"{error}\"");
+        String::from("")
+    });
+
+    if !password.is_empty() {
+        println!("password = {password}");
     }
 }
