@@ -12,7 +12,7 @@ struct GeneratorOptions {
     use_lower_case_letters: bool,
     use_digits: bool,
     use_symbols: bool,
-    length: i8,
+    length: u8,
 }
 
 static UPPER_CASE_CHARS: [char; 26] = [
@@ -37,9 +37,13 @@ static BAD_LETTERS: [char; 3] = [
     'I', 'l', 'O'
 ];
 
+const MIN_LENGTH : u8 = 4;
 
-fn generate(generator_options: GeneratorOptions) -> String {
-    let mut rng = rand::thread_rng();
+
+fn generate(generator_options: GeneratorOptions) -> Option<String> {
+    if generator_options.length < MIN_LENGTH {
+        return None;
+    }
 
     let mut character_sets: Vec<&[char]> = Vec::new();
     if generator_options.use_upper_case_letters {
@@ -55,12 +59,17 @@ fn generate(generator_options: GeneratorOptions) -> String {
         character_sets.push(&SYMBOLS)
     }
 
+    if character_sets.is_empty() {
+        return None
+    }
+
+    let mut rng = rand::thread_rng();
+
     let mut password = String::new();
 
     'generation: loop {
         for _ in 0..generator_options.length {
-            let character_set = character_sets.get(rng.gen_range(0..character_sets.len()))
-                .unwrap();
+            let character_set = character_sets.get(rng.gen_range(0..character_sets.len()))?;
 
             let character = loop {
                 let character = character_set[rng.gen_range(0..character_set.len())];
@@ -79,7 +88,7 @@ fn generate(generator_options: GeneratorOptions) -> String {
             }
         }
 
-        return password;
+        return Some(password);
     }
 }
 
@@ -103,9 +112,11 @@ fn main() {
         use_lower_case_letters: true,
         use_symbols: true,
         use_digits: true,
-        length: 4,
+        length: 16,
     };
 
-    let password = generate(options);
-    println!("password = {password}");
+    match generate(options) {
+        Some(password) => println!("password = {password}"),
+        None => println!("Not generated")
+    }
 }
