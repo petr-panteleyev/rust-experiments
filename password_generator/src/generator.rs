@@ -100,9 +100,9 @@ fn check_character(ch: char) -> bool {
     !BAD_LETTERS.contains(&ch)
 }
 
-fn check_password(bucket: &[char], password: &String) -> bool {
+fn check_password(charset: &[char], password: &String) -> bool {
     for ch in password.chars() {
-        if bucket.contains(&ch) {
+        if charset.contains(&ch) {
             return true;
         }
     }
