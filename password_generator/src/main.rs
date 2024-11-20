@@ -27,7 +27,7 @@ Usage:
   -n <n>    - password length, default: 16, allowed range: [4..32]
   --pin     - PIN: -d -n 4
   --unix    - Unix password: -ulds -n 8
-  --help    - print this help message
+  --help    - print this help message and exit
 "#;
 
 fn main() {
